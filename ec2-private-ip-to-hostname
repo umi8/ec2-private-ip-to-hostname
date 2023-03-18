@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# This script takes a private IP address of an EC2 instance as input
+# and returns the hostname and the link to the EC2 instance's detail page
+# on the AWS Management Console.
+
+# Usage statement
+usage() {
+  echo "Usage: $0 <private-ip-address>"
+  echo "       $0 [-h | --help]"
+  echo ""
+  echo "Options:"
+  echo "  -h, --help  Show this help message and usage."
+}
+
+# Parse command-line options
+while [ "$1" ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      private_ip="$1"
+      ;;
+  esac
+  shift
+done
+
+# Check if the IP address is valid
+if ! [[ $private_ip =~ ^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])[-\.]){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$ ]]; then
+  echo "Invalid IP address format. Please use x.x.x.x or x-x-x-x format."
+  exit 1
+fi
+
+# Replace hyphens with dots in the IP address
+private_ip=$(echo "$private_ip" | tr '-' '.')
+
+# Get the instance ID for the specified private IP address
+instance_id=$(aws ec2 describe-instances \
+  --filters "Name=network-interface.addresses.private-ip-address,Values=$private_ip" \
+  --query 'Reservations[].Instances[].InstanceId' \
+  --output text)
+
+# Get the name of the EC2 instance
+instance_name=$(aws ec2 describe-tags \
+  --filters "Name=resource-id,Values=$instance_id" "Name=key,Values=Name" \
+  --query 'Tags[].Value' \
+  --output text)
+
+# Get the link to the detail page of the EC2 instance
+region=$(aws configure get region)
+instance_link="https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Instances:instanceId=${instance_id}"
+
+# Output the instance name and detail page link
+echo "Instance Name: ${instance_name}"
+echo "Instance Link: ${instance_link}"
