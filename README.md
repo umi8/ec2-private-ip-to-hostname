@@ -16,7 +16,7 @@ Options:
   -h, --help  Show this help message and usage.
 ```
 
-<private-ip-address>: Required. The private IP address of the EC2 instance. Separators are supported for dots and hyphens.
+`private-ip-address`: Required. The private IP address of the EC2 instance. Separators are supported for dots and hyphens.
 
 ## Example
 
